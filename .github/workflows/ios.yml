@@ -33,6 +33,12 @@ jobs:
       - name: Installing/Updating libraries
         run: |
           haxe -cp commandline -D analyzer-optimize --run Main setup -s
+      - name: Install missing haxelib dependencies
+        run: |
+          haxelib install hxcpp
+          haxelib install hxvlc  # 如果 hxvlc 未安装，则加上；若已安装可省略
+      - name: List installed haxelibs
+        run: haxelib list
       - name: Building the game
         run: haxelib run lime build ios -eval -nosign -final
       - name: Clearing already existing cache
