@@ -67,19 +67,23 @@ jobs:
             return 1
           }
 
-          # 1. 安装核心库（hxcpp、openfl、hxandroid、hxjava）
+          # 安装其他核心库（不指定版本）
           echo "=== Installing required core libraries ==="
           retry_install hxcpp
           retry_install openfl
           retry_install hxandroid
           retry_install hxjava
 
-          # 2. 安装 lime（尝试多个版本，并备选 git 克隆）
+          # 安装 lime：优先尝试 7.9.0，失败则 clone git
           echo "=== Installing lime ==="
-          if ! retry_install lime 7.9.0; then
+          if retry_install lime 7.9.0; then
+            echo "✅ lime 7.9.0 installed from haxelib"
+          else
             echo "lime 7.9.0 failed, trying 8.2.1..."
-            if ! retry_install lime 8.2.1; then
-              echo "Both versioned lime installations failed. Cloning from git as last resort..."
+            if retry_install lime 8.2.1; then
+              echo "✅ lime 8.2.1 installed from haxelib"
+            else
+              echo "Both versioned installations failed. Cloning lime from GitHub directly..."
               if haxelib git lime https://github.com/openfl/lime; then
                 echo "✅ lime installed from git"
               else
@@ -89,15 +93,15 @@ jobs:
             fi
           fi
 
-          # 3. hxvlc 可选
+          # hxvlc 可选
           echo "=== Installing hxvlc (optional) ==="
           haxelib install hxvlc || echo "hxvlc skipped (not critical)."
 
-          # 4. 运行项目自定义设置（可能安装 flixel 等）
+          # 运行项目自定义设置（安装 flixel 等）
           echo "=== Running project setup script ==="
           haxe -cp commandline -D analyzer-optimize --run Main setup -s || echo "Setup script finished."
 
-          # 5. 调试信息
+          # 调试信息
           echo "=== Installed haxelibs ==="
           haxelib list
           haxelib path hxcpp || echo "hxcpp not found!"
