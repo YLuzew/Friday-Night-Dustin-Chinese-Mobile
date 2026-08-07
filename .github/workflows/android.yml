@@ -127,10 +127,8 @@ jobs:
 
       - name: Building the game
         run: |
-          # 检查 project.xml 是否存在
-          ls -la project.xml || echo "project.xml not found!"
-          # 显式指定 project.xml
-          haxelib run lime build android -final -D ONLY_ARM64 project.xml
+          # 工作目录就是项目根目录，lime 会自动找到 project.xml
+          haxelib run lime build android -final -D ONLY_ARM64
 
       - name: Uploading artifact
         uses: actions/upload-artifact@v4
