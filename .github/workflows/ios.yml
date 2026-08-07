@@ -1,41 +1,75 @@
 name: iOS Build
 on:
-  push:
-    branches: ['main']
   workflow_dispatch:
   workflow_call:
+env:
+  PROJECT_NAME: Friday-Night-Dustin-Chinese
 jobs:
   build:
     name: iOS Build
-    permissions: write-all
     runs-on: macos-15
     steps:
-      - name: Pulling the new commit
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 0
+
       - name: Setting up Haxe
         uses: krdlab/setup-haxe@v2
         with:
           haxe-version: 4.3.7
+
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@master
         with:
           xcode-version: '16.4'
-      - name: Restore existing build cache for faster compilation
+
+      - name: Restore Cache
         uses: actions/cache@v4
         with:
-          key: cache-build-ios
+          key: cache-build-ios-${{ github.run_id }}
           path: |
             .haxelib/
-            export/release/ios/dustin/haxe/
+            /Users/runner/haxelib/
+            export/release/ios/${{ env.PROJECT_NAME }}/haxe/
+            export/release/ios/${{ env.PROJECT_NAME }}/obj/
           restore-keys: |
-            cache-build-ios
+            cache-build-ios-
+
       - name: Installing/Updating libraries
         run: |
+          haxelib install hscript 2.5.0
+          haxelib install lime
+          haxelib install openfl
+          haxelib install flixel
+          haxelib install hxvlc
           haxe -cp commandline -D analyzer-optimize --run Main setup -s
+
+      - name: Fix Haxelib (switch to git versions)
+        run: |
+          haxelib set lime git
+          haxelib set hxcpp git
+          haxelib set flixel git
+          haxelib set openfl git
+
       - name: Building the game
         run: |
           haxelib run lime build ios -nosign -final
-      - name: Clearing already existing cache
+
+      - name: Make Ipa
+        run: |
+          cd export/release/ios/build/Release-iphoneos
+          mkdir -p Payload
+          mv *.app Payload
+          zip -r ${{ env.PROJECT_NAME }}.ipa Payload
+
+      - name: Uploading artifact (entire build)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Friday-Night-Dustin-Chinese-iOS
+          path: export/release/ios/build/Release-iphoneos/*.ipa
+
+      - name: Clear Previous Cache
         uses: actions/github-script@v6
         with:
           script: |
@@ -54,26 +88,15 @@ jobs:
                 console.log("Cache cleared.")
               }
             }
-      - name: Making ipa file
-        run: |
-          brew install ldid
-          cd export/release/ios/build/Release-iphoneos/dustin.app
-          ldid -S../../../dustin/dustin.entitlements dustin
-          cd ..
-          mkdir Payload
-          mv dustin.app Payload
-          zip -r dustin.ipa Payload
-      - name: Uploading artifact (entire build)
-        uses: actions/upload-artifact@v4
-        with:
-          name: Dustin iOS
-          path: export/release/ios/build/Release-iphoneos/*.ipa
-      - name: Uploading new cache
+
+      - name: Upload New Cache
         uses: actions/cache@v4
         with:
           key: cache-build-ios
           path: |
             .haxelib/
-            export/release/ios/dustin/haxe/
+            /Users/runner/haxelib/
+            export/release/ios/${{ env.PROJECT_NAME }}/haxe/
+            export/release/ios/${{ env.PROJECT_NAME }}/obj/
           restore-keys: |
             cache-build-ios
