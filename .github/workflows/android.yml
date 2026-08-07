@@ -67,13 +67,13 @@ jobs:
             return 1
           }
 
-          # 安装核心库（hxjava 提供 Android 绑定，不需要 hxandroid）
+          # 安装核心库（hxjava 提供 Java 标准库）
           echo "=== Installing required core libraries ==="
           retry_install hxcpp
           retry_install openfl
           retry_install hxjava
 
-          # 安装 lime：优先尝试 7.9.0，失败则 clone git
+          # 安装 lime（优先 7.9.0，失败则尝试 8.2.1，再失败则 git clone）
           echo "=== Installing lime ==="
           if retry_install lime 7.9.0; then
             echo "✅ lime 7.9.0 installed from haxelib"
@@ -92,6 +92,19 @@ jobs:
             fi
           fi
 
+          # 安装 hxandroid（提供 Android 特定类），尝试从 Git 安装
+          echo "=== Installing hxandroid (for Android-specific classes) ==="
+          if haxelib git hxandroid https://github.com/HaxeFoundation/hxandroid; then
+            echo "✅ hxandroid installed from git"
+          else
+            echo "⚠️ Git installation failed, trying via haxelib install (may not exist)..."
+            if ! retry_install hxandroid; then
+              echo "❌ hxandroid installation failed. This is critical for Android build."
+              echo "Please check your project dependencies or install hxandroid manually."
+              exit 1
+            fi
+          fi
+
           # hxvlc 可选
           echo "=== Installing hxvlc (optional) ==="
           haxelib install hxvlc || echo "hxvlc skipped (not critical)."
@@ -105,6 +118,7 @@ jobs:
           haxelib list
           haxelib path hxcpp || echo "hxcpp not found!"
           haxelib path lime || echo "lime not found!"
+          haxelib path hxandroid || echo "hxandroid not found!"
 
       - name: Patch hscript bug
         run: |
@@ -128,7 +142,8 @@ jobs:
 
       - name: Building the game
         run: |
-          haxelib run lime build android -final -D ONLY_ARM64
+          # 显式添加 -lib hxjava 和 -lib hxandroid 确保类加载
+          haxelib run lime build android -final -D ONLY_ARM64 -lib hxjava -lib hxandroid
 
       - name: Uploading artifact
         uses: actions/upload-artifact@v4
