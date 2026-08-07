@@ -19,7 +19,6 @@ jobs:
       - name: Restore existing build cache for faster compilation
         uses: actions/cache@v4
         with:
-          # not caching the bin folder to prevent asset duplication and stuff like that
           key: cache-build-android
           path: |
             .haxelib/
@@ -29,6 +28,8 @@ jobs:
             cache-build-android
       - name: Installing/Updating libraries
         run: |
+          haxelib install hxcpp
+          haxelib install hxvlc
           haxe -cp commandline -D analyzer-optimize --run Main setup -s
       - name: Configuring Android
         run: |
@@ -65,7 +66,6 @@ jobs:
       - name: Uploading new cache
         uses: actions/cache@v4
         with:
-          # caching again since for some reason it doesnt work with the first post cache shit
           key: cache-build-android
           path: |
             .haxelib/

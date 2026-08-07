@@ -23,7 +23,6 @@ jobs:
       - name: Restore existing build cache for faster compilation
         uses: actions/cache@v4
         with:
-          # not caching the bin folder to prevent asset duplication and stuff like that
           key: cache-build-ios
           path: |
             .haxelib/
@@ -32,6 +31,8 @@ jobs:
             cache-build-ios
       - name: Installing/Updating libraries
         run: |
+          haxelib install hxcpp
+          haxelib install hxvlc
           haxe -cp commandline -D analyzer-optimize --run Main setup -s
       - name: Building the game
         run: haxelib run lime build ios -eval -nosign -final
@@ -71,7 +72,6 @@ jobs:
       - name: Uploading new cache
         uses: actions/cache@v4
         with:
-          # caching again since for some reason it doesnt work with the first post cache shit
           key: cache-build-ios
           path: |
             .haxelib/
