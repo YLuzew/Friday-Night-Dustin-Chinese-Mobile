@@ -31,8 +31,6 @@ jobs:
             cache-build-ios
       - name: Installing/Updating libraries
         run: |
-          haxelib install hxcpp
-          haxelib install hxvlc
           haxe -cp commandline -D analyzer-optimize --run Main setup -s
       - name: Building the game
         run: |
