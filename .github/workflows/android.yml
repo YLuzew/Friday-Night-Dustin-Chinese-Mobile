@@ -120,6 +120,16 @@ jobs:
           find . -name "Interp.hx" -path "*/hscript/*" -exec sed -i 's/return Config\.IMPORT_BLACKLIST;/return [];/g' {} \;
           find . -name "Interp.hx" -path "*/hscript/*" -exec sed -i 's/return Config\.importBlacklist;/return [];/g' {} \;
 
+      - name: Inject android target-sdk into project.xml
+        run: |
+          # 在 <project> 标签内插入 <android target-sdk-version="30" /> （如果不存在）
+          if ! grep -q "<android target-sdk-version" project.xml; then
+            sed -i '/<project>/a \ \ <android target-sdk-version="30" />' project.xml
+            echo "✅ Injected android target-sdk-version"
+          else
+            echo "ℹ️ android target-sdk-version already present"
+          fi
+
       - name: Configure Android
         run: |
           haxelib run lime setup -alias -y
@@ -127,6 +137,9 @@ jobs:
           haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_HOME
           haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
           haxelib run lime config ANDROID_SETUP true
+          # 调试：打印 SDK 路径和平台列表
+          echo "ANDROID_HOME: $ANDROID_HOME"
+          ls -la $ANDROID_HOME/platforms || echo "platforms directory not found"
 
       - name: Fix Haxelib (optional)
         run: |
@@ -137,7 +150,8 @@ jobs:
 
       - name: Building the game
         run: |
-          haxelib run lime build android -final -D ONLY_ARM64 -D android
+          # 添加 -v 以查看详细编译命令，确认 android.jar 是否包含
+          haxelib run lime build android -final -D ONLY_ARM64 -D android -v
 
       - name: Uploading artifact
         uses: actions/upload-artifact@v4
