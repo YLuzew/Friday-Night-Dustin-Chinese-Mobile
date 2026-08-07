@@ -37,15 +37,8 @@ jobs:
 
       - name: Installing/Updating libraries
         run: |
-          # 显式安装核心库
-          haxelib install hxcpp 4.3.1
-          haxelib install lime 8.2.1
-          haxelib install openfl 9.3.0
-          haxelib install flixel 5.6.1
-          haxelib install flixel-addons 3.2.2
-          haxelib install flxanimate
+          haxelib install hxcpp
           haxelib install hxvlc
-          # 运行项目设置
           haxe -cp commandline -D analyzer-optimize --run Main setup -s
 
       - name: Fix Haxelib
