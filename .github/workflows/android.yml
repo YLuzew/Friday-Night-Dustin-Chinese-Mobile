@@ -17,11 +17,23 @@ jobs:
         with:
           haxe-version: 4.3.7
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          log-level: info
+
       - name: Setup Android NDK
         id: setup-ndk
         uses: nttld/setup-ndk@main
         with:
           ndk-version: r25c
+
+      - name: Install Android platform and build tools
+        run: |
+          # 接受许可证（自动）
+          yes | sdkmanager --licenses || true
+          # 安装所需平台和构建工具（API 30 是常用版本）
+          sdkmanager "platforms;android-30" "build-tools;30.0.3"
 
       - name: Restore Cache
         uses: actions/cache@v4
@@ -127,8 +139,8 @@ jobs:
 
       - name: Building the game
         run: |
-          # 工作目录就是项目根目录，lime 会自动找到 project.xml
-          haxelib run lime build android -final -D ONLY_ARM64
+          # 添加 -D android 并确保引用已安装的 SDK
+          haxelib run lime build android -final -D ONLY_ARM64 -D android
 
       - name: Uploading artifact
         uses: actions/upload-artifact@v4
