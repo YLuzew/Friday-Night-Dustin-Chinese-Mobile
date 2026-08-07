@@ -1,14 +1,14 @@
 # 周五夜幕·尘埃落 CNE架构
 
-![fnd](dustin-header.webp)
+![fnd](art/dustin-header.webp)
 
 <div style="text-align:center;font-size: 20px; font-size: 1.2em;">
 
-容 器 已 就 绪 。
+容 &nbsp; 器 &nbsp; 已 &nbsp; 就 &nbsp; 绪。
 
-经 过 这 么 多 年 。
+经 &nbsp; 过 &nbsp; 这 &nbsp; 么 &nbsp; 多 &nbsp; 年。
 
-你 准 备 好 了 吗 ？
+你 &nbsp; 准 &nbsp; 备 &nbsp; 好 &nbsp; 了 &nbsp; 吗？
 </div>
 
 周五夜幕·尘埃落 模组 下载地址：
@@ -18,7 +18,7 @@
 # 引擎？？？
 本模组基于 FNF 的可扩展模组框架：Codename Engine。此源代码文件夹可放入 mods 文件夹中，以便在 Codename 中运行！
 
-![codename logo](cne.jpg)
+![codename logo](art/cne.jpg)
 
 下载 Codename：
 - Windows：[https://tinyurl.com/cne-download-windows](https://nightly.link/CodenameCrew/CodenameEngine/workflows/windows/main/Codename%20Engine.zip)
