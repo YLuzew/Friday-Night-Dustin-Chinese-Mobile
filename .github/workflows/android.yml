@@ -41,10 +41,12 @@ jobs:
 
       - name: Installing/Updating libraries
         run: |
+          # 清除旧目录，确保纯净
           rm -rf .haxelib
           mkdir -p .haxelib
           haxelib setup || true
 
+          # 重试安装函数（最多5次）
           retry_install() {
             local max=5
             local count=1
@@ -62,12 +64,21 @@ jobs:
             return 1
           }
 
+          # 必须安装的核心库
           retry_install hxcpp 4.3.1
-          retry_install hxvlc
-          retry_install hxandroid   # Android 绑定
-          retry_install hxjava      # Java 绑定
+          retry_install lime          # 使用最新稳定版
+          retry_install openfl
+          retry_install hxandroid     # Android Java 绑定
+          retry_install hxjava        # Java 核心绑定
+
+          # hxvlc 为可选，安装失败不影响构建
+          echo "Installing hxvlc (optional)..."
+          haxelib install hxvlc || echo "hxvlc installation skipped (not critical)."
+
+          # 运行项目自定义设置（可能会安装 flixel 等）
           haxe -cp commandline -D analyzer-optimize --run Main setup -s || echo "Setup script finished"
 
+          # 调试信息
           haxelib list
           haxelib path hxcpp || echo "hxcpp not found!"
 
@@ -84,7 +95,7 @@ jobs:
           haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
           haxelib run lime config ANDROID_SETUP true
 
-      - name: Fix Haxelib (optional)
+      - name: Fix Haxelib (optional - use git versions for some libs)
         run: |
           haxelib set flixel git
           haxelib set flixel-addons git
@@ -94,8 +105,6 @@ jobs:
       - name: Building the game
         run: |
           haxelib run lime build android -final -D ONLY_ARM64
-          # 这真的很诡异，你们知道吗
-          # 我已急哭
 
       - name: Uploading artifact
         uses: actions/upload-artifact@v4
