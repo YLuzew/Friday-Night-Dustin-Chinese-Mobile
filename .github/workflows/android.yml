@@ -120,7 +120,10 @@ jobs:
 
       - name: Building the game
         run: |
-          haxelib run lime build android -final -D ONLY_ARM64 -lib hxjava
+          # 检查 project.xml 是否存在
+          ls -la project.xml || echo "project.xml not found!"
+          # 显式指定 project.xml
+          haxelib run lime build android -final -D ONLY_ARM64 -lib hxjava project.xml
 
       - name: Uploading artifact
         uses: actions/upload-artifact@v4
