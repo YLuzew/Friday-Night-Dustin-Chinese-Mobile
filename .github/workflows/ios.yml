@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   workflow_call:
 env:
-  PROJECT_NAME: dustin   # 请确认
+  PROJECT_NAME: dustin
 jobs:
   build:
     name: iOS Build
@@ -33,7 +33,7 @@ jobs:
             export/release/ios/${{ env.PROJECT_NAME }}/haxe/
             export/release/ios/${{ env.PROJECT_NAME }}/obj/
           restore-keys: |
-            cache-build-ios-none   # 改掉恢复键
+            cache-build-ios-none
 
       - name: Installing/Updating libraries
         run: |
@@ -58,8 +58,17 @@ jobs:
             return 1
           }
 
+          # 安装 hxcpp 和 hxvlc
           retry_install hxcpp 4.3.1
           retry_install hxvlc
+          # 使用 lime 7.9.0（兼容 flex1）
+          retry_install lime 7.9.0
+          # 安装其他依赖
+          retry_install openfl
+          retry_install flixel
+          retry_install flixel-addons
+          retry_install flxanimate
+
           haxe -cp commandline -D analyzer-optimize --run Main setup -s || echo "Setup script finished"
 
           haxelib list
@@ -67,8 +76,7 @@ jobs:
 
       - name: Fix Haxelib (optional)
         run: |
-          # haxelib set lime git
-          # haxelib set hxcpp git
+          # 不切换 lime 到 git，保留固定版本
           haxelib set flixel git
           haxelib set flixel-addons git
           haxelib set flixel-animate git
@@ -77,6 +85,8 @@ jobs:
       - name: Building the game
         run: |
           haxelib run lime build ios -nosign -final
+          # 这真的很诡异，你们知道吗
+          # 我已急哭
 
       - name: Make Ipa
         run: |
