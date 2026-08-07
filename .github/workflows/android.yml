@@ -48,14 +48,13 @@ jobs:
           # 重试安装函数，支持超时（单位：秒）
           retry_install() {
             local lib="$1"
-            local version="$2"
             local timeout_sec=300   # 5分钟超时
             local max_attempts=3
             local attempt=1
 
             while [ $attempt -le $max_attempts ]; do
-              echo "Attempt $attempt/$max_attempts: installing $lib${version:+ }$version (timeout ${timeout_sec}s)"
-              if timeout $timeout_sec haxelib install --always "$lib" $version; then
+              echo "Attempt $attempt/$max_attempts: installing $lib (timeout ${timeout_sec}s)"
+              if timeout $timeout_sec haxelib install --always "$lib"; then
                 echo "✅ Successfully installed $lib"
                 return 0
               fi
@@ -67,26 +66,21 @@ jobs:
             return 1
           }
 
-          # 安装必需的核心库（必须成功）
-          retry_install hxcpp 4.3.1
-          # lime 有时大文件下载卡住，增加重试次数和更长的超时（600秒）
-          echo "Installing lime (may take a while)..."
-          if ! retry_install lime 8.2.1; then
-            echo "lime 8.2.1 failed, trying 7.9.0 as fallback..."
-            retry_install lime 7.9.0
-          fi
+          # 安装必需的核心库（不指定版本，让 haxelib 自动选择最新稳定版）
+          retry_install hxcpp
+          retry_install lime
           retry_install openfl
           retry_install hxandroid
           retry_install hxjava
 
-          # hxvlc 可选，失败不影响
+          # hxvlc 可选，失败不影响构建
           echo "Installing hxvlc (optional)..."
           haxelib install hxvlc || echo "hxvlc skipped (not critical)."
 
-          # 运行项目自定义设置（可能安装 flixel 等）
+          # 运行项目自定义设置（安装 flixel 等）
           haxe -cp commandline -D analyzer-optimize --run Main setup -s || echo "Setup script finished."
 
-          # 调试信息
+          # 调试输出
           echo "--- Installed haxelibs ---"
           haxelib list
           haxelib path hxcpp || echo "hxcpp not found!"
