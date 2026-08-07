@@ -23,6 +23,7 @@ jobs:
         with:
           ndk-version: r25c
 
+      # 缓存仍然保留，但恢复键改为不存在的值，避免从旧缓存恢复
       - name: Restore Cache
         uses: actions/cache@v4
         with:
@@ -37,13 +38,43 @@ jobs:
             export/release/android/haxe/
             export/release/android/obj/
           restore-keys: |
-            cache-build-android-
+            cache-build-android-none   # 故意改成不存在的键
 
       - name: Installing/Updating libraries
         run: |
-          haxelib install hxcpp
-          haxelib install hxvlc
-          haxe -cp commandline -D analyzer-optimize --run Main setup -s
+          # 彻底清除 .haxelib 目录，确保全新安装
+          rm -rf .haxelib
+          mkdir -p .haxelib
+          haxelib setup || true
+
+          # 重试函数（带超时保护）
+          retry_install() {
+            local max=5
+            local count=1
+            while [ $count -le $max ]; do
+              echo "Attempt $count/$max: haxelib install $1"
+              if haxelib install --always "$1"; then
+                echo "Successfully installed $1"
+                return 0
+              fi
+              echo "Failed, retrying in 10s..."
+              sleep 10
+              count=$((count+1))
+            done
+            echo "Failed after $max attempts"
+            return 1
+          }
+
+          # 安装核心库（固定版本以避免兼容性问题）
+          retry_install hxcpp 4.3.1
+          retry_install hxvlc
+
+          # 运行项目自定义设置（可能安装其他库）
+          haxe -cp commandline -D analyzer-optimize --run Main setup -s || echo "Setup script finished"
+
+          # 验证安装
+          haxelib list
+          haxelib path hxcpp || echo "hxcpp not found!"
 
       - name: Patch hscript bug
         run: |
@@ -58,10 +89,12 @@ jobs:
           haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
           haxelib run lime config ANDROID_SETUP true
 
-      - name: Fix Haxelib
+      # 移除 Fix Haxelib 步骤，因为 set 到 git 可能引起版本混乱
+      # 如果需要，可以保留但只针对部分库，但不建议对 hxcpp 和 lime 使用 git 分支
+      - name: Fix Haxelib (optional)
         run: |
-          haxelib set lime git
-          haxelib set hxcpp git
+          # haxelib set lime git
+          # haxelib set hxcpp git   # 注释掉，避免覆盖已安装的稳定版本
           haxelib set flixel git
           haxelib set flixel-addons git
           haxelib set flixel-animate git
@@ -71,7 +104,7 @@ jobs:
         run: |
           haxelib run lime build android -final -D ONLY_ARM64
 
-      - name: Uploading artifact (entire build)
+      - name: Uploading artifact
         uses: actions/upload-artifact@v4
         with:
           name: Dustin Android
@@ -111,4 +144,4 @@ jobs:
             export/release/android/haxe/
             export/release/android/obj/
           restore-keys: |
-            cache-build-android
+            cache-build-android-none

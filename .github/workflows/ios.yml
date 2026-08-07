@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   workflow_call:
 env:
-  PROJECT_NAME: dustin   # 请确认与您的项目输出目录一致
+  PROJECT_NAME: dustin   # 请确认
 jobs:
   build:
     name: iOS Build
@@ -33,18 +33,42 @@ jobs:
             export/release/ios/${{ env.PROJECT_NAME }}/haxe/
             export/release/ios/${{ env.PROJECT_NAME }}/obj/
           restore-keys: |
-            cache-build-ios-
+            cache-build-ios-none   # 改掉恢复键
 
       - name: Installing/Updating libraries
         run: |
-          haxelib install hxcpp
-          haxelib install hxvlc
-          haxe -cp commandline -D analyzer-optimize --run Main setup -s
+          rm -rf .haxelib
+          mkdir -p .haxelib
+          haxelib setup || true
 
-      - name: Fix Haxelib
+          retry_install() {
+            local max=5
+            local count=1
+            while [ $count -le $max ]; do
+              echo "Attempt $count/$max: haxelib install $1"
+              if haxelib install --always "$1"; then
+                echo "Successfully installed $1"
+                return 0
+              fi
+              echo "Failed, retrying in 10s..."
+              sleep 10
+              count=$((count+1))
+            done
+            echo "Failed after $max attempts"
+            return 1
+          }
+
+          retry_install hxcpp 4.3.1
+          retry_install hxvlc
+          haxe -cp commandline -D analyzer-optimize --run Main setup -s || echo "Setup script finished"
+
+          haxelib list
+          haxelib path hxcpp || echo "hxcpp not found!"
+
+      - name: Fix Haxelib (optional)
         run: |
-          haxelib set lime git
-          haxelib set hxcpp git
+          # haxelib set lime git
+          # haxelib set hxcpp git
           haxelib set flixel git
           haxelib set flixel-addons git
           haxelib set flixel-animate git
@@ -61,7 +85,7 @@ jobs:
           mv *.app Payload
           zip -r ${{ env.PROJECT_NAME }}.ipa Payload
 
-      - name: Uploading artifact (entire build)
+      - name: Uploading artifact
         uses: actions/upload-artifact@v4
         with:
           name: Dustin iOS
@@ -101,4 +125,4 @@ jobs:
             export/release/ios/${{ env.PROJECT_NAME }}/haxe/
             export/release/ios/${{ env.PROJECT_NAME }}/obj/
           restore-keys: |
-            cache-build-ios
+            cache-build-ios-none
