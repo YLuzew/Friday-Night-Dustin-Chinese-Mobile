@@ -31,12 +31,9 @@ jobs:
             cache-build-ios
       - name: Installing/Updating libraries
         run: |
-          haxelib git hxcpp https://github.com/HaxeFoundation/hxcpp
-          haxelib git lime https://github.com/openfl/lime
-          haxelib git openfl https://github.com/openfl/openfl
-          haxelib git flixel https://github.com/HaxeFlixel/flixel
+          haxelib install hxcpp
           haxelib install hxvlc
-          haxe -cp commandline -lib lime -lib openfl -lib flixel -D analyzer-optimize --run Main setup -s
+          haxe -cp commandline -D analyzer-optimize --run Main setup -s
       - name: Building the game
         run: |
           haxelib run lime build ios -eval -nosign -final
