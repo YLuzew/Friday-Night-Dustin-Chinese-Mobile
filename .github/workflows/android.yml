@@ -34,7 +34,7 @@ jobs:
           haxelib install flixel
           haxelib install hxvlc
           haxelib install android
-          haxe -cp commandline -D analyzer-optimize --run Main setup -s
+          haxe -cp commandline -lib lime -lib openfl -lib flixel -D analyzer-optimize --run Main setup -s
       - name: Configuring Android
         run: |
           haxelib run lime config ANDROID_SDK $ANDROID_HOME
