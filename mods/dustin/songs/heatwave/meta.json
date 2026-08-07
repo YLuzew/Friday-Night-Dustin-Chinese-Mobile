@@ -1,0 +1,35 @@
+{
+	"customValues": {
+		"characterY": null,
+		"character": null,
+		"mainColor": null,
+		"credits": {
+			"CHART": "CURIOUS",
+			"BACKGROUND": "HLOARTS",
+			"SPRITES": "MERRITZ, CHEZZAR, CHUF",
+			"SONG": "MADHAYTER, CHEZZAR"
+		},
+		"customName": "热 浪 滚 滚",
+		"titleCardSubtext": "* 由 Madhayter/pause(0.5)/\n* 合作. Chezzar",
+		"gameover": {
+			"quote": "孩子，我觉得够了。",
+			"isMonster": false,
+			"sound": "sans",
+			"song": "heatwave"
+		},
+		"stats": "* 衫斯 67 攻击 56 防御\n* 你从未见过他 如此沮丧。\n* 身上的尘埃比他刚才更多。",
+		"characterX": null
+	},
+	"color": "#950B0B",
+	"opponentModeAllowed": true,
+	"difficulties": [
+		"hard"
+	],
+	"icon": "face",
+	"coopAllowed": true,
+	"stepsPerBeat": 4,
+	"displayName": "热 浪 滚 滚",
+	"needsVoices": true,
+	"beatsPerMeasure": 4,
+	"bpm": 130
+}

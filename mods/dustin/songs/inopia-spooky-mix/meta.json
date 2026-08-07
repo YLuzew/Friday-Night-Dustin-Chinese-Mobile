@@ -1,0 +1,32 @@
+{
+	"customValues": {
+		"customName": "缺乏 恐怖双子Mix",
+		"character": "inopia",
+		"titleCardSubtext": "* 由 Chezzar/pause(0.5)/\n* 合作. Ug32T & Skie",
+		"gameover": {
+			"quote": "KEVIN，亲爱的 请记住我们的约定。",
+			"isMonster": false,
+			"sound": "gf",
+			"song": "inopia"
+		},
+		"credits": {
+			"SPRITES": "CHEZZAR",
+			"BACKGROUND": "WILLART-MEI",
+			"CHART": "WILLART-MEI",
+			"SONG": "CHEZZAR, UG32T, SKIE"
+		},
+		"stats": "* 衫斯 1 攻击 1 防御\n* 上次进食已有7年之久。\n* 他似乎很痛苦。"
+	},
+	"color": "#9271FD",
+	"opponentModeAllowed": false,
+	"difficulties": [
+		"hard"
+	],
+	"icon": "face",
+	"coopAllowed": false,
+	"stepsPerBeat": 4,
+	"displayName": "缺乏 恐怖双子Mix",
+	"needsVoices": true,
+	"beatsPerMeasure": 4,
+	"bpm": 132
+}
