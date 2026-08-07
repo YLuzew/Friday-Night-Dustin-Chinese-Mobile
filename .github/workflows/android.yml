@@ -28,43 +28,44 @@ jobs:
             cache-build-android
       - name: Clean and install all dependencies
         run: |
-          # 强制清除旧 haxelib 缓存，避免损坏文件干扰
+          # 清空缓存，确保纯净安装
           rm -rf .haxelib
           mkdir -p .haxelib
 
-          # 项目自带设置脚本（可能安装部分库）
+          # 项目自带脚本（可能安装一些自定义库）
           haxe -cp commandline -D analyzer-optimize --run Main setup -s || echo "Setup script finished"
 
-          # 重试函数（最多5次，间隔10秒）
+          # 重试函数（最多5次，间隔15秒，增加超时）
           retry() {
             local max=5
             local count=1
             while [ $count -le $max ]; do
               echo "Attempt $count/$max: $*"
-              if "$@"; then
+              # 使用 timeout 120 秒防止卡死
+              if timeout 120 "$@"; then
                 echo "Success!"
                 return 0
               fi
-              echo "Failed, retrying in 10s..."
-              sleep 10
+              echo "Failed, retrying in 15s..."
+              sleep 15
               count=$((count+1))
             done
             echo "All attempts failed."
             return 1
           }
 
-          # 安装必需库（不指定版本，让 haxelib 自动选择最新稳定版）
-          retry haxelib install hxcpp
-          retry haxelib install lime
-          retry haxelib install openfl
-          retry haxelib install flixel
-          retry haxelib install flixel-addons
+          # 指定兼容版本（与 Haxe 4.3.7 匹配）
+          retry haxelib install hxcpp 4.3.1
+          retry haxelib install lime 8.2.1
+          retry haxelib install openfl 9.3.0
+          retry haxelib install flixel 5.6.1
+          retry haxelib install flixel-addons 3.2.2
           retry haxelib install flxanimate
           retry haxelib install hxjava
           retry haxelib install hxandroid
-          retry haxelib install hxvlc   # 可选，项目需要
+          retry haxelib install hxvlc
 
-          # 调试：列出所有已安装库
+          # 列出已安装库
           haxelib list
       - name: Configuring Android
         run: |

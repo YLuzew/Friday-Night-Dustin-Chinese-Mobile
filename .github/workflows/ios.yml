@@ -31,11 +31,9 @@ jobs:
             cache-build-ios
       - name: Clean and install all dependencies
         run: |
-          # 强制清除旧 haxelib 缓存
           rm -rf .haxelib
           mkdir -p .haxelib
 
-          # 项目自带设置脚本
           haxe -cp commandline -D analyzer-optimize --run Main setup -s || echo "Setup script finished"
 
           retry() {
@@ -43,26 +41,25 @@ jobs:
             local count=1
             while [ $count -le $max ]; do
               echo "Attempt $count/$max: $*"
-              if "$@"; then
+              if timeout 120 "$@"; then
                 echo "Success!"
                 return 0
               fi
-              echo "Failed, retrying in 10s..."
-              sleep 10
+              echo "Failed, retrying in 15s..."
+              sleep 15
               count=$((count+1))
             done
             echo "All attempts failed."
             return 1
           }
 
-          # 安装必需库（iOS 不需要 hxjava/hxandroid）
-          retry haxelib install hxcpp
-          retry haxelib install lime
-          retry haxelib install openfl
-          retry haxelib install flixel
-          retry haxelib install flixel-addons
+          retry haxelib install hxcpp 4.3.1
+          retry haxelib install lime 8.2.1
+          retry haxelib install openfl 9.3.0
+          retry haxelib install flixel 5.6.1
+          retry haxelib install flixel-addons 3.2.2
           retry haxelib install flxanimate
-          retry haxelib install hxvlc   # 可选
+          retry haxelib install hxvlc
 
           haxelib list
       - name: Building the game
