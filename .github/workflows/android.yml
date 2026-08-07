@@ -39,11 +39,6 @@ jobs:
       - name: Installing/Updating libraries
         run: |
           haxelib install hscript 2.5.0
-          haxelib install lime
-          haxelib install openfl
-          haxelib install flixel
-          haxelib install hxvlc
-          haxelib install android
           haxe -cp commandline -D analyzer-optimize --run Main setup -s
 
       - name: Fix Haxelib (switch to git versions)
