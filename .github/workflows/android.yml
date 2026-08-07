@@ -67,11 +67,10 @@ jobs:
             return 1
           }
 
-          # 安装其他核心库（不指定版本）
+          # 安装核心库（hxjava 提供 Android 绑定，不需要 hxandroid）
           echo "=== Installing required core libraries ==="
           retry_install hxcpp
           retry_install openfl
-          retry_install hxandroid
           retry_install hxjava
 
           # 安装 lime：优先尝试 7.9.0，失败则 clone git
