@@ -29,43 +29,44 @@ jobs:
             export/release/ios/dustin/haxe/
           restore-keys: |
             cache-build-ios
-      - name: Installing all dependencies (with retry)
+      - name: Clean and install all dependencies
         run: |
-          # 项目自带脚本
-          haxe -cp commandline -D analyzer-optimize --run Main setup -s
+          # 强制清除旧 haxelib 缓存
+          rm -rf .haxelib
+          mkdir -p .haxelib
+
+          # 项目自带设置脚本
+          haxe -cp commandline -D analyzer-optimize --run Main setup -s || echo "Setup script finished"
 
           retry() {
-            local max_attempts=3
-            local attempt=1
-            while [ $attempt -le $max_attempts ]; do
-              echo "Attempt $attempt/$max_attempts: $@"
+            local max=5
+            local count=1
+            while [ $count -le $max ]; do
+              echo "Attempt $count/$max: $*"
               if "$@"; then
                 echo "Success!"
                 return 0
               fi
-              echo "Failed, retrying in 5s..."
-              sleep 5
-              attempt=$((attempt+1))
+              echo "Failed, retrying in 10s..."
+              sleep 10
+              count=$((count+1))
             done
             echo "All attempts failed."
             return 1
           }
 
-          # 安装核心库
+          # 安装必需库（iOS 不需要 hxjava/hxandroid）
           retry haxelib install hxcpp
-          retry haxelib install lime 8.2.1
+          retry haxelib install lime
           retry haxelib install openfl
-          retry haxelib install flixel 5.6.1
-          retry haxelib install flixel-addons 3.2.2
+          retry haxelib install flixel
+          retry haxelib install flixel-addons
           retry haxelib install flxanimate
-          retry haxelib install hxvlc  # 如果项目需要
-
-          # 更新所有库
-          haxelib upgrade
+          retry haxelib install hxvlc   # 可选
 
           haxelib list
       - name: Building the game
-        run: haxelib run lime build ios -eval -nosign -final
+        run: haxelib run lime build ios -eval -nosign -final -verbose
       - name: Clearing already existing cache
         uses: actions/github-script@v6
         with:

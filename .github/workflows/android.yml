@@ -26,44 +26,45 @@ jobs:
             export/release/android/obj/
           restore-keys: |
             cache-build-android
-      - name: Installing all dependencies (with retry)
+      - name: Clean and install all dependencies
         run: |
-          # 项目自带脚本（可能安装一些东西）
-          haxe -cp commandline -D analyzer-optimize --run Main setup -s
+          # 强制清除旧 haxelib 缓存，避免损坏文件干扰
+          rm -rf .haxelib
+          mkdir -p .haxelib
 
-          # 重试函数
+          # 项目自带设置脚本（可能安装部分库）
+          haxe -cp commandline -D analyzer-optimize --run Main setup -s || echo "Setup script finished"
+
+          # 重试函数（最多5次，间隔10秒）
           retry() {
-            local max_attempts=3
-            local attempt=1
-            while [ $attempt -le $max_attempts ]; do
-              echo "Attempt $attempt/$max_attempts: $@"
+            local max=5
+            local count=1
+            while [ $count -le $max ]; do
+              echo "Attempt $count/$max: $*"
               if "$@"; then
                 echo "Success!"
                 return 0
               fi
-              echo "Failed, retrying in 5s..."
-              sleep 5
-              attempt=$((attempt+1))
+              echo "Failed, retrying in 10s..."
+              sleep 10
+              count=$((count+1))
             done
             echo "All attempts failed."
             return 1
           }
 
-          # 安装核心库（指定稳定版本）
+          # 安装必需库（不指定版本，让 haxelib 自动选择最新稳定版）
           retry haxelib install hxcpp
-          retry haxelib install lime 8.2.1
+          retry haxelib install lime
           retry haxelib install openfl
-          retry haxelib install flixel 5.6.1
-          retry haxelib install flixel-addons 3.2.2
+          retry haxelib install flixel
+          retry haxelib install flixel-addons
           retry haxelib install flxanimate
           retry haxelib install hxjava
           retry haxelib install hxandroid
-          retry haxelib install hxvlc  # 如果项目需要
+          retry haxelib install hxvlc   # 可选，项目需要
 
-          # 更新所有库（确保依赖一致）
-          haxelib upgrade
-
-          # 列出已安装库便于调试
+          # 调试：列出所有已安装库
           haxelib list
       - name: Configuring Android
         run: |
@@ -72,7 +73,7 @@ jobs:
           haxelib run lime config JAVA_HOME $JAVA_HOME_21_arm64
           haxelib run lime config ANDROID_SETUP true
       - name: Building the game
-        run: haxelib run lime build android -final
+        run: haxelib run lime build android -final -verbose
       - name: Uploading artifact
         uses: actions/upload-artifact@v4
         with:
