@@ -23,20 +23,28 @@ jobs:
       - name: Restore existing build cache for faster compilation
         uses: actions/cache@v4
         with:
-          # not caching the bin folder to prevent asset duplication and stuff like that
           key: cache-build-ios
           path: |
             .haxelib/
             export/release/ios/dustin/haxe/
           restore-keys: |
             cache-build-ios
-      - name: Installing/Updating libraries
+      - name: Installing/Updating libraries (project script)
         run: |
           haxe -cp commandline -D analyzer-optimize --run Main setup -s
       - name: Install missing haxelib dependencies
         run: |
+          # 核心库（iOS 也需要这些）
           haxelib install hxcpp
-          haxelib install hxvlc  # 如果 hxvlc 未安装，则加上；若已安装可省略
+          haxelib install lime
+          haxelib install openfl
+          # 可选：Android 绑定在 iOS 上不会影响构建，但也可安装
+          # haxelib install hxjava
+          # haxelib install hxandroid
+          # 如果项目需要 hxvlc
+          haxelib install hxvlc
+          # 自定义框架 flexel（请替换为实际 Git 地址）
+          # haxelib git flexel https://github.com/your-org/flexel
       - name: List installed haxelibs
         run: haxelib list
       - name: Building the game
@@ -77,7 +85,6 @@ jobs:
       - name: Uploading new cache
         uses: actions/cache@v4
         with:
-          # caching again since for some reason it doesnt work with the first post cache shit
           key: cache-build-ios
           path: |
             .haxelib/
