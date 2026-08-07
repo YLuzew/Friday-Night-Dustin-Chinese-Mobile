@@ -28,7 +28,7 @@ jobs:
             cache-build-android
       - name: Installing/Updating libraries
         run: |
-          haxelib install hxcpp
+          haxelib git hxcpp https://github.com/HaxeFoundation/hxcpp
           haxelib install hxvlc
           haxe -cp commandline -D analyzer-optimize --run Main setup -s
       - name: Configuring Android
@@ -39,7 +39,7 @@ jobs:
           haxelib run lime config ANDROID_SETUP true
       - name: Building the game
         run: |
-          haxelib install hxcpp
+          haxelib git hxcpp https://github.com/HaxeFoundation/hxcpp
           haxelib run lime build android -final
       - name: Uploading artifact (entire build)
         uses: actions/upload-artifact@v4

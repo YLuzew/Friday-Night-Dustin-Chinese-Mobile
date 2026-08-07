@@ -31,12 +31,12 @@ jobs:
             cache-build-ios
       - name: Installing/Updating libraries
         run: |
-          haxelib install hxcpp
+          haxelib git hxcpp https://github.com/HaxeFoundation/hxcpp
           haxelib install hxvlc
           haxe -cp commandline -D analyzer-optimize --run Main setup -s
       - name: Building the game
         run: |
-          haxelib install hxcpp
+          haxelib git hxcpp https://github.com/HaxeFoundation/hxcpp
           haxelib run lime build ios -eval -nosign -final
       - name: Clearing already existing cache
         uses: actions/github-script@v6
