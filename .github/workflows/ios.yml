@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   workflow_call:
 env:
-  PROJECT_NAME: dustin   # 修改为您的项目名
+  PROJECT_NAME: dustin   # 请确认与您的项目输出目录一致
 jobs:
   build:
     name: iOS Build
@@ -37,6 +37,15 @@ jobs:
 
       - name: Installing/Updating libraries
         run: |
+          # 显式安装核心库
+          haxelib install hxcpp 4.3.1
+          haxelib install lime 8.2.1
+          haxelib install openfl 9.3.0
+          haxelib install flixel 5.6.1
+          haxelib install flixel-addons 3.2.2
+          haxelib install flxanimate
+          haxelib install hxvlc
+          # 运行项目设置
           haxe -cp commandline -D analyzer-optimize --run Main setup -s
 
       - name: Fix Haxelib

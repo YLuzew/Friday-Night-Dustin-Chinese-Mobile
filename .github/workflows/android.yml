@@ -41,7 +41,16 @@ jobs:
 
       - name: Installing/Updating libraries
         run: |
+          # 显式安装核心库（确保 hxcpp 存在）
+          haxelib install hxcpp 4.3.1
+          haxelib install lime 8.2.1
+          haxelib install openfl 9.3.0
+          haxelib install flixel 5.6.1
+          haxelib install flixel-addons 3.2.2
+          haxelib install flxanimate
+          haxelib install hxvlc
           haxelib install hscript 2.5.0
+          # 运行项目设置（可能安装其他库）
           haxe -cp commandline -D analyzer-optimize --run Main setup -s
 
       - name: Patch hscript bug
