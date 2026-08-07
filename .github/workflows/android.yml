@@ -1,77 +1,49 @@
 name: Android Build
 on:
+  push:
+    branches: ['main']
   workflow_dispatch:
   workflow_call:
 jobs:
   build:
     name: Android Build
-    runs-on: ubuntu-latest
+    permissions: write-all
+    runs-on: macos-15
     steps:
-      - name: Checkout
-        uses: actions/checkout@main
-        with:
-          fetch-depth: 0
-
+      - name: Pulling the new commit
+        uses: actions/checkout@v4
       - name: Setting up Haxe
         uses: krdlab/setup-haxe@v2
         with:
           haxe-version: 4.3.7
-
-      - name: Setup Android NDK
-        id: setup-ndk
-        uses: nttld/setup-ndk@main
-        with:
-          ndk-version: r25c
-
-      - name: Restore Cache
+      - name: Restore existing build cache for faster compilation
         uses: actions/cache@v4
         with:
-          key: cache-build-android-${{ github.run_id }}
+          # not caching the bin folder to prevent asset duplication and stuff like that
+          key: cache-build-android
           path: |
-            ~/.gradle
             .haxelib/
-            /home/runner/haxelib/
             export/release/android/haxe/
             export/release/android/obj/
           restore-keys: |
-            cache-build-android-
-
+            cache-build-android
       - name: Installing/Updating libraries
         run: |
-          # 小库用 install（几MB，不容易超时）
-          haxelib install hscript 2.5.0
-          haxelib install hxvlc
-          haxelib install android
-          # 大库全部从 GitHub 克隆（--depth 1 只拉最新版）
-          haxelib git hxcpp https://github.com/HaxeFoundation/hxcpp --depth 1
-          haxelib git lime https://github.com/openfl/lime --depth 1
-          haxelib git openfl https://github.com/openfl/openfl --depth 1
-          haxelib git flixel https://github.com/HaxeFlixel/flixel --depth 1
           haxe -cp commandline -D analyzer-optimize --run Main setup -s
-
-      - name: Patch hscript bug
-        run: |
-          find . -name "Interp.hx" -path "*/hscript/*" -exec sed -i 's/return Config\.IMPORT_BLACKLIST;/return [];/g' {} \; 2>/dev/null || true
-          find . -name "Interp.hx" -path "*/hscript/*" -exec sed -i 's/return Config\.importBlacklist;/return [];/g' {} \; 2>/dev/null || true
-
-      - name: Configure Android
+      - name: Configuring Android
         run: |
           haxelib run lime config ANDROID_SDK $ANDROID_HOME
-          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_HOME
-          haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
+          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME
+          haxelib run lime config JAVA_HOME $JAVA_HOME_21_arm64
           haxelib run lime config ANDROID_SETUP true
-
       - name: Building the game
-        run: |
-          haxelib run lime build android -final -D ONLY_ARM64
-
-      - name: Uploading artifact
+        run: haxelib run lime build android -final
+      - name: Uploading artifact (entire build)
         uses: actions/upload-artifact@v4
         with:
-          name: Friday-Night-Dustin-Chinese-Android
-          path: export/release/android/bin/app/build/outputs/apk/*
-
-      - name: Clear Previous Cache
+          name: Dustin Android
+          path: export/release/android/bin/app/build/outputs/apk/release/*.apk
+      - name: Clearing already existing cache
         uses: actions/github-script@v6
         with:
           script: |
@@ -90,15 +62,13 @@ jobs:
                 console.log("Cache cleared.")
               }
             }
-
-      - name: Upload New Cache
+      - name: Uploading new cache
         uses: actions/cache@v4
         with:
+          # caching again since for some reason it doesnt work with the first post cache shit
           key: cache-build-android
           path: |
-            ~/.gradle
             .haxelib/
-            /home/runner/haxelib/
             export/release/android/haxe/
             export/release/android/obj/
           restore-keys: |
