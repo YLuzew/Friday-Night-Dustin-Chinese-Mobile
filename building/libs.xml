@@ -5,7 +5,7 @@
 
 		<!-- OpenFL & Lime (Required for Flixel) -->
 		<git name="openfl" url="https://github.com/CodenameCrew/cne-openfl" />
-	    <git name="lime" url="https://github.com/HomuHomu833-haxelibs/lime" ref="int-delta" />
+	    <git name="lime" url="https://github.com/ShadowEngineTeam/lime" />
 
 		<!-- Flixel -->
 		<git name="flixel" url="https://github.com/CodenameCrew/cne-flixel" />
@@ -29,6 +29,6 @@
 		<lib name="format" />
 		<lib name="hxp" />
 
-		<git name="hxcpp" url="https://github.com/HomuHomu833-haxelibs/hxcpp" />
+		<git name="hxcpp" url="https://github.com/FunkinCrew/hxcpp" />
 	</if>
 </libraries>
