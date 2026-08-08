@@ -73,12 +73,6 @@ jobs:
           retry_install openfl
           retry_install hxjava
 
-          echo "=== Installing Android native extension ==="
-          if ! haxelib list | grep -q "extension-androidtools"; then
-            haxelib git extension-androidtools https://github.com/LimeExtensions/extension-androidtools.git || \
-            retry_install extension-androidtools
-          fi
-
           echo "=== Installing lime ==="
           if retry_install lime 7.9.0; then
             echo "✅ lime 7.9.0 installed"
@@ -96,6 +90,13 @@ jobs:
               fi
             fi
           fi
+
+          echo "=== Installing flixel ecosystem ==="
+          retry_install flixel
+          retry_install flixel-addons
+          retry_install flxanimate
+          retry_install hxdiscord_rpc
+
           echo "=== Installing hxvlc (optional) ==="
           haxelib install hxvlc || echo "hxvlc skipped."
           echo "=== Running project setup script ==="
@@ -201,13 +202,6 @@ jobs:
           haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_HOME
           haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
           haxelib run lime config ANDROID_SETUP true
-
-      - name: Fix Haxelib (optional)
-        run: |
-          haxelib set flixel git
-          haxelib set flixel-addons git
-          haxelib set flxanimate git
-          haxelib set hxdiscord_rpc git
 
       - name: Building the game
         run: |
