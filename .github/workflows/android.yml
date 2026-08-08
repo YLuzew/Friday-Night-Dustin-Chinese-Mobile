@@ -44,7 +44,7 @@ jobs:
         run: |
           git config --global url."https://x-access-token:${GH_PAT}@github.com/HomuHomu833-haxelibs/".insteadOf "https://github.com/HomuHomu833-haxelibs/"
 
-      - name: Installing CNE 定制依赖（严格对齐原版）
+      - name: Install CNE custom dependencies
         run: |
           rm -rf .haxelib
           mkdir -p .haxelib
@@ -62,32 +62,32 @@ jobs:
               fi
               sleep 10
             done
-            echo "❌ $lib 安装失败"
+            echo "Failed to install $lib"
             exit 1
           }
 
-          echo "=== 底层基础库 ==="
+          echo "=== Core libraries ==="
           retry_git hxcpp https://github.com/th2l-devs/hxcpp
           haxelib install openfl 9.2.2 --always
 
-          echo "=== Lime 定制版（Ajwyunsx分支，含WindowVSyncMode） ==="
+          echo "=== Custom Lime (Ajwyunsx fork) ==="
           retry_git lime https://github.com/Ajwyunsx/lime
 
-          echo "=== Flixel CNE 定制全家桶 ==="
+          echo "=== CNE flixel stack ==="
           retry_git flixel https://github.com/CodenameCrew/cne-flixel
           retry_git flixel-addons https://github.com/CodenameCrew/cne-flixel-addons
           retry_git flxanimate https://github.com/CodenameCrew/cne-flxanimate
           retry_git hscript-improved https://github.com/CodenameCrew/hscript-improved custom-classes
 
-          echo "=== 其他扩展 ==="
+          echo "=== Extra extensions ==="
           haxelib install hxjava --always
           haxelib install hxvlc 1.9.3 --always --skip-deps || true
           haxelib install hxdiscord_rpc --always || true
 
-          echo "=== 执行项目初始化脚本 ==="
+          echo "=== Run project setup ==="
           haxe -cp commandline -D analyzer-optimize --run Main setup -s || echo "Setup finished."
 
-          echo "=== 已安装库列表 ==="
+          echo "=== Installed haxelibs ==="
           haxelib list
 
       - name: Patch hscript bug
@@ -95,70 +95,70 @@ jobs:
           find . -name "Interp.hx" -path "*/hscript*" -exec sed -i 's/return Config\.IMPORT_BLACKLIST;/return [];/g' {} \;
           find . -name "Interp.hx" -path "*/hscript*" -exec sed -i 's/return Config\.importBlacklist;/return [];/g' {} \;
 
-      - name: 补全缺失 Android extern 类
+      - name: Add missing Android extern classes
         run: |
           mkdir -p source/android/os source/android/content
 
           cat > source/android/os/Build.hx << 'EOF'
-package android.os;
-extern class Build {
-  public static var MODEL:String;
-  public static var MANUFACTURER:String;
-  public static var PRODUCT:String;
-  public static var DEVICE:String;
-  public static var VERSION:Version;
-}
-extern class Version {
-  public static var SDK_INT:Int;
-  public static var RELEASE:String;
-  public static var CODENAME:String;
-}
-EOF
+          package android.os;
+          extern class Build {
+            public static var MODEL:String;
+            public static var MANUFACTURER:String;
+            public static var PRODUCT:String;
+            public static var DEVICE:String;
+            public static var VERSION:Version;
+          }
+          extern class Version {
+            public static var SDK_INT:Int;
+            public static var RELEASE:String;
+            public static var CODENAME:String;
+          }
+          EOF
 
           cat > source/android/os/Environment.hx << 'EOF'
-package android.os;
-extern class Environment {
-  public static var MEDIA_MOUNTED:String;
-  public static var MEDIA_UNMOUNTED:String;
-  public static function getExternalStorageDirectory():String;
-  public static function getExternalStorageState():String;
-}
-EOF
+          package android.os;
+          extern class Environment {
+            public static var MEDIA_MOUNTED:String;
+            public static var MEDIA_UNMOUNTED:String;
+            public static function getExternalStorageDirectory():String;
+            public static function getExternalStorageState():String;
+          }
+          EOF
 
           cat > source/android/content/Context.hx << 'EOF'
-package android.content;
-extern class Context {
-  public function getExternalFilesDir(type:String):String;
-  public function getFilesDir():String;
-  public function getPackageName():String;
-  public function getContentResolver():ContentResolver;
-}
-extern class ContentResolver {}
-EOF
+          package android.content;
+          extern class Context {
+            public function getExternalFilesDir(type:String):String;
+            public function getFilesDir():String;
+            public function getPackageName():String;
+            public function getContentResolver():ContentResolver;
+          }
+          extern class ContentResolver {}
+          EOF
 
           cat > source/android/Settings.hx << 'EOF'
-package android;
-extern class Settings {
-  public static var System:SystemSettings;
-}
-extern class SystemSettings {
-  public static var SCREEN_BRIGHTNESS:String;
-  public static var SCREEN_OFF_TIMEOUT:String;
-}
-EOF
+          package android;
+          extern class Settings {
+            public static var System:SystemSettings;
+          }
+          extern class SystemSettings {
+            public static var SCREEN_BRIGHTNESS:String;
+            public static var SCREEN_OFF_TIMEOUT:String;
+          }
+          EOF
 
           cat > source/android/Permissions.hx << 'EOF'
-package android;
-extern class Permissions {
-  public static var READ_EXTERNAL_STORAGE:String;
-  public static var WRITE_EXTERNAL_STORAGE:String;
-  public static var CAMERA:String;
-  public static var RECORD_AUDIO:String;
-  public static var INTERNET:String;
-}
-EOF
+          package android;
+          extern class Permissions {
+            public static var READ_EXTERNAL_STORAGE:String;
+            public static var WRITE_EXTERNAL_STORAGE:String;
+            public static var CAMERA:String;
+            public static var RECORD_AUDIO:String;
+            public static var INTERNET:String;
+          }
+          EOF
 
-      - name: Configure Android
+      - name: Configure Android build environment
         run: |
           haxelib run lime setup -alias -y
           haxelib run lime config ANDROID_SDK $ANDROID_HOME
@@ -166,17 +166,17 @@ EOF
           haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
           haxelib run lime config ANDROID_SETUP true
 
-      - name: Building the game
+      - name: Build Android APK
         run: |
           haxelib run lime build android -final -D ONLY_ARM64
 
-      - name: Uploading artifact
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: Dustin Android
           path: export/release/android/bin/app/build/outputs/apk/*
 
-      - name: Clear Previous Cache
+      - name: Clear previous cache
         uses: actions/github-script@v6
         with:
           script: |
@@ -195,7 +195,7 @@ EOF
               }
             }
 
-      - name: Upload New Cache
+      - name: Upload new cache
         uses: actions/cache@v4
         with:
           key: cache-build-android
