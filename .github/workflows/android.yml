@@ -17,21 +17,11 @@ jobs:
         with:
           haxe-version: 4.3.7
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: 'tools platform-tools'
-          accept-android-sdk-licenses: true
-
       - name: Setup Android NDK
         id: setup-ndk
         uses: nttld/setup-ndk@main
         with:
-          ndk-version: r25c
-
-      - name: Install Android platform and build tools
-        run: |
-          sdkmanager "platforms;android-30" "build-tools;30.0.3"
+          ndk-version: r21e
 
       - name: Restore Cache
         uses: actions/cache@v4
@@ -41,8 +31,6 @@ jobs:
             ~/.gradle
             .haxelib/
             /home/runner/haxelib/
-            /Users/runner/haxelib/
-            C:/hostedtoolcache/windows/haxe/4.3.6/x64/lib/
             ~/.haxelib/
             export/release/android/haxe/
             export/release/android/obj/
@@ -61,14 +49,12 @@ jobs:
           rm -rf .haxelib
           mkdir -p .haxelib
           haxelib setup || true
-
           retry_install() {
             local lib="$1"
             local version="$2"
             local timeout_sec=600
             local max_attempts=5
             local attempt=1
-
             while [ $attempt -le $max_attempts ]; do
               echo "Attempt $attempt/$max_attempts: installing $lib${version:+ }$version (timeout ${timeout_sec}s)"
               if timeout $timeout_sec haxelib install --always "$lib" $version; then
@@ -82,11 +68,16 @@ jobs:
             echo "⚠️ Failed to install $lib after $max_attempts attempts."
             return 1
           }
-
           echo "=== Installing core libraries ==="
           retry_install hxcpp
           retry_install openfl
           retry_install hxjava
+
+          echo "=== Installing Android native extension ==="
+          if ! haxelib list | grep -q "extension-androidtools"; then
+            haxelib git extension-androidtools https://github.com/MAJigsaw77/extension-androidtools.git || \
+            retry_install extension-androidtools
+          fi
 
           echo "=== Installing lime ==="
           if retry_install lime 7.9.0; then
@@ -105,13 +96,10 @@ jobs:
               fi
             fi
           fi
-
           echo "=== Installing hxvlc (optional) ==="
           haxelib install hxvlc || echo "hxvlc skipped."
-
           echo "=== Running project setup script ==="
           haxe -cp commandline -D analyzer-optimize --run Main setup -s || echo "Setup script finished."
-
           echo "=== Installed haxelibs ==="
           haxelib list
 
@@ -120,16 +108,6 @@ jobs:
           find . -name "Interp.hx" -path "*/hscript/*" -exec sed -i 's/return Config\.IMPORT_BLACKLIST;/return [];/g' {} \;
           find . -name "Interp.hx" -path "*/hscript/*" -exec sed -i 's/return Config\.importBlacklist;/return [];/g' {} \;
 
-      - name: Inject android target-sdk into project.xml
-        run: |
-          # 在 <project> 标签内插入 <android target-sdk-version="30" /> （如果不存在）
-          if ! grep -q "<android target-sdk-version" project.xml; then
-            sed -i '/<project>/a \ \ <android target-sdk-version="30" />' project.xml
-            echo "✅ Injected android target-sdk-version"
-          else
-            echo "ℹ️ android target-sdk-version already present"
-          fi
-
       - name: Configure Android
         run: |
           haxelib run lime setup -alias -y
@@ -137,9 +115,6 @@ jobs:
           haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_HOME
           haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
           haxelib run lime config ANDROID_SETUP true
-          # 调试：打印 SDK 路径和平台列表
-          echo "ANDROID_HOME: $ANDROID_HOME"
-          ls -la $ANDROID_HOME/platforms || echo "platforms directory not found"
 
       - name: Fix Haxelib (optional)
         run: |
@@ -150,8 +125,7 @@ jobs:
 
       - name: Building the game
         run: |
-          # 添加 -v 以查看详细编译命令，确认 android.jar 是否包含
-          haxelib run lime build android -final -D ONLY_ARM64 -D android -v
+          haxelib run lime build android -final -D ONLY_ARM64
 
       - name: Uploading artifact
         uses: actions/upload-artifact@v4
@@ -187,8 +161,6 @@ jobs:
             ~/.gradle
             .haxelib/
             /home/runner/haxelib/
-            /Users/runner/haxelib/
-            C:/hostedtoolcache/windows/haxe/4.3.6/x64/lib/
             ~/.haxelib/
             export/release/android/haxe/
             export/release/android/obj/
