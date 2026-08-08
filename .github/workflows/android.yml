@@ -1,212 +1,50 @@
 name: Android Build
 on:
+  push:
+    branches: ['main']
   workflow_dispatch:
-  workflow_call:
 jobs:
   build:
     name: Android Build
-    runs-on: ubuntu-latest
+    permissions: write-all
+    runs-on: macos-15
     steps:
-      - name: Checkout
-        uses: actions/checkout@main
+      - name: Pulling the new commit
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Setting up Haxe
-        uses: krdlab/setup-haxe@v2
+        uses: ShadowEngineTeam/setup-haxe@main
         with:
           haxe-version: 4.3.7
-
-      - name: Setup Android NDK
-        id: setup-ndk
-        uses: nttld/setup-ndk@main
+      - name: Restore existing build cache for faster compilation
+        uses: actions/cache@v4.2.3
         with:
-          ndk-version: r21e
-
-      - name: Restore Cache
-        uses: actions/cache@v4
-        with:
-          key: cache-build-android-${{ github.run_id }}
+          # not caching the bin folder to prevent asset duplication and stuff like that
+          key: cache-build-android
           path: |
-            ~/.gradle
             .haxelib/
-            /home/runner/haxelib/
-            ~/.haxelib/
             export/release/android/haxe/
             export/release/android/obj/
           restore-keys: |
-            cache-build-android-none
-
-      - name: Configure Git auth for private haxelibs
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
-        if: env.GH_PAT != ''
+            cache-build-android
+      - name: Installing/Updating libraries
         run: |
-          git config --global url."https://x-access-token:${GH_PAT}@github.com/HomuHomu833-haxelibs/".insteadOf "https://github.com/HomuHomu833-haxelibs/"
-
-      - name: Install CNE official dependencies (old branch)
+          haxe -cp commandline -D analyzer-optimize --run Main setup -s --no-vscheck
+      - name: Configuring Android
         run: |
-          rm -rf .haxelib
-          mkdir -p .haxelib
-          haxelib setup .haxelib || true
-
-          retry_git() {
-            local lib="$1"
-            local url="$2"
-            local ref="$3"
-            for i in {1..3}; do
-              if [ -n "$ref" ]; then
-                haxelib git "$lib" "$url" "$ref" && return 0
-              else
-                haxelib git "$lib" "$url" && return 0
-              fi
-              sleep 10
-            done
-            echo "Failed to install $lib"
-            exit 1
-          }
-
-          echo "=== Core libraries (CNE old branch) ==="
-          retry_git hxcpp https://github.com/CodenameCrew/cne-hxcpp old
-          retry_git openfl https://github.com/CodenameCrew/cne-openfl old
-          haxelib install lime 8.1.2 --always
-
-          echo "=== Flixel stack (CNE old branch) ==="
-          retry_git flixel https://github.com/CodenameCrew/cne-flixel old
-          retry_git flixel-addons https://github.com/CodenameCrew/cne-flixel-addons old
-          retry_git flxanimate https://github.com/CodenameCrew/cne-flxanimate old
-
-          echo "=== Other CNE libraries ==="
-          retry_git hscript-improved https://github.com/CodenameCrew/hscript-improved codename-dev
-          retry_git hxdiscord_rpc https://github.com/CodenameCrew/cne-hxdiscord_rpc old
-          retry_git away3d https://github.com/CodenameCrew/away3d
-
-          echo "=== Standard haxelib libraries ==="
-          haxelib install funkin-modchart --always || true
-          haxelib install hxvlc 1.9.3 --always --skip-deps || true
-          haxelib install hxWebSockets --always || true
-          haxelib install format --always
-          haxelib install markdown --always
-          haxelib install nape-haxe4 --always || true
-          haxelib install hxjava --always
-          haxelib install hxcpp-debug-server --always || true
-
-          echo "=== Run project setup ==="
-          haxe -cp commandline -D analyzer-optimize --run Main setup -s || echo "Setup finished."
-
-          echo "=== Installed haxelibs ==="
-          haxelib list
-
-      - name: Patch hscript bug
-        run: |
-          find . -name "Interp.hx" -path "*/hscript*" -exec sed -i 's/return Config\.IMPORT_BLACKLIST;/return [];/g' {} \;
-          find . -name "Interp.hx" -path "*/hscript*" -exec sed -i 's/return Config\.importBlacklist;/return [];/g' {} \;
-
-      - name: Add missing type definitions (lime + Android)
-        run: |
-          # 补全 lime 缺失类型
-          mkdir -p source/lime/ui source/lime/media
-
-          cat > source/lime/ui/WindowVSyncMode.hx << 'EOF'
-          package lime.ui;
-
-          enum WindowVSyncMode {
-            DISABLED;
-            ENABLED;
-            ADAPTIVE;
-          }
-          EOF
-
-          cat > source/lime/media/AudioDecoder.hx << 'EOF'
-          package lime.media;
-
-          extern class AudioDecoder {
-            public function new();
-            public function decode(data:Dynamic):Dynamic;
-          }
-          EOF
-
-          # 补全 Android 系统类 extern
-          mkdir -p source/android/os source/android/content
-
-          cat > source/android/os/Build.hx << 'EOF'
-          package android.os;
-          extern class Build {
-            public static var MODEL:String;
-            public static var MANUFACTURER:String;
-            public static var PRODUCT:String;
-            public static var DEVICE:String;
-            public static var VERSION:Version;
-          }
-          extern class Version {
-            public static var SDK_INT:Int;
-            public static var RELEASE:String;
-            public static var CODENAME:String;
-          }
-          EOF
-
-          cat > source/android/os/Environment.hx << 'EOF'
-          package android.os;
-          extern class Environment {
-            public static var MEDIA_MOUNTED:String;
-            public static var MEDIA_UNMOUNTED:String;
-            public static function getExternalStorageDirectory():String;
-            public static function getExternalStorageState():String;
-          }
-          EOF
-
-          cat > source/android/content/Context.hx << 'EOF'
-          package android.content;
-          extern class Context {
-            public function getExternalFilesDir(type:String):String;
-            public function getFilesDir():String;
-            public function getPackageName():String;
-            public function getContentResolver():ContentResolver;
-          }
-          extern class ContentResolver {}
-          EOF
-
-          cat > source/android/Settings.hx << 'EOF'
-          package android;
-          extern class Settings {
-            public static var System:SystemSettings;
-          }
-          extern class SystemSettings {
-            public static var SCREEN_BRIGHTNESS:String;
-            public static var SCREEN_OFF_TIMEOUT:String;
-          }
-          EOF
-
-          cat > source/android/Permissions.hx << 'EOF'
-          package android;
-          extern class Permissions {
-            public static var READ_EXTERNAL_STORAGE:String;
-            public static var WRITE_EXTERNAL_STORAGE:String;
-            public static var CAMERA:String;
-            public static var RECORD_AUDIO:String;
-            public static var INTERNET:String;
-          }
-          EOF
-
-      - name: Configure Android build environment
-        run: |
-          haxelib run lime setup -alias -y
           haxelib run lime config ANDROID_SDK $ANDROID_HOME
-          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_HOME
-          haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
+          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME
+          haxelib run lime config JAVA_HOME $JAVA_HOME_21_arm64
           haxelib run lime config ANDROID_SETUP true
-
-      - name: Build Android APK
-        run: |
-          haxelib run lime build android -final -D ONLY_ARM64
-
-      - name: Upload build artifact
+      - name: Building the game
+        run: haxelib run lime build android -ONLY_ARM64
+      - name: Uploading artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Dustin Android
-          path: export/release/android/bin/app/build/outputs/apk/*
-
-      - name: Clear previous cache
+          name: Codename Engine Android
+          path: export/release/android/bin/app/build/outputs/apk/release/*.apk
+      - name: Clearing already existing cache
         uses: actions/github-script@v6
         with:
           script: |
@@ -215,26 +53,24 @@ jobs:
               repo: context.repo.repo,
             })
             for (const cache of caches.data.actions_caches) {
-              if (cache.key.startsWith("cache-build-android")) {
+              if (cache.key == "cache-build-android") {
                 console.log('Clearing ' + cache.key + '...')
                 await github.rest.actions.deleteActionsCacheById({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   cache_id: cache.id,
                 })
+                console.log("Cache cleared.")
               }
             }
-
-      - name: Upload new cache
-        uses: actions/cache@v4
+      - name: Uploading new cache
+        uses: actions/cache@v4.2.3
         with:
+          # caching again since for some reason it doesnt work with the first post cache shit
           key: cache-build-android
           path: |
-            ~/.gradle
             .haxelib/
-            /home/runner/haxelib/
-            ~/.haxelib/
             export/release/android/haxe/
             export/release/android/obj/
           restore-keys: |
-            cache-build-android-none
+            cache-build-android
