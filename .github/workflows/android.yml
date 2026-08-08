@@ -110,10 +110,11 @@ jobs:
 
       - name: Fix missing Android extern classes
         run: |
-          # 补充缺失的安卓系统类extern定义，解决Type not found编译错误
+          # 批量创建缺失的安卓系统类extern定义，解决Type not found编译错误
           mkdir -p source/android/os
           mkdir -p source/android/content
 
+          # android.os.Build
           cat > source/android/os/Build.hx << 'EOF'
           package android.os;
 
@@ -132,6 +133,22 @@ jobs:
           }
           EOF
 
+          # android.os.Environment
+          cat > source/android/os/Environment.hx << 'EOF'
+          package android.os;
+
+          extern class Environment {
+              public static var MEDIA_MOUNTED:String;
+              public static var MEDIA_UNMOUNTED:String;
+              public static function getExternalStorageDirectory():String;
+              public static function getExternalStorageState():String;
+              public static function getDataDirectory():String;
+              public static function getDownloadCacheDirectory():String;
+              public static function getRootDirectory():String;
+          }
+          EOF
+
+          # android.content.Context
           cat > source/android/content/Context.hx << 'EOF'
           package android.content;
 
@@ -140,11 +157,14 @@ jobs:
               public function getFilesDir():String;
               public function getPackageName():String;
               public function getContentResolver():ContentResolver;
+              public function getSharedPreferences(name:String, mode:Int):SharedPreferences;
           }
 
           extern class ContentResolver {}
+          extern class SharedPreferences {}
           EOF
 
+          # android.Settings
           cat > source/android/Settings.hx << 'EOF'
           package android;
 
@@ -155,6 +175,22 @@ jobs:
           extern class SystemSettings {
               public static var SCREEN_BRIGHTNESS:String;
               public static var SCREEN_OFF_TIMEOUT:String;
+          }
+          EOF
+
+          # android.Permissions
+          cat > source/android/Permissions.hx << 'EOF'
+          package android;
+
+          extern class Permissions {
+              public static var READ_EXTERNAL_STORAGE:String;
+              public static var WRITE_EXTERNAL_STORAGE:String;
+              public static var CAMERA:String;
+              public static var RECORD_AUDIO:String;
+              public static var INTERNET:String;
+              public static var ACCESS_NETWORK_STATE:String;
+              public static var WAKE_LOCK:String;
+              public static var VIBRATE:String;
           }
           EOF
 
