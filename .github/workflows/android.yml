@@ -44,7 +44,7 @@ jobs:
         run: |
           git config --global url."https://x-access-token:${GH_PAT}@github.com/HomuHomu833-haxelibs/".insteadOf "https://github.com/HomuHomu833-haxelibs/"
 
-      - name: Install CNE custom dependencies
+      - name: Install CNE official dependencies (old branch)
         run: |
           rm -rf .haxelib
           mkdir -p .haxelib
@@ -66,23 +66,30 @@ jobs:
             exit 1
           }
 
-          echo "=== Core libraries ==="
-          retry_git hxcpp https://github.com/th2l-devs/hxcpp
-          haxelib install openfl 9.2.2 --always
+          echo "=== Core libraries (CNE old branch) ==="
+          retry_git hxcpp https://github.com/CodenameCrew/cne-hxcpp old
+          retry_git openfl https://github.com/CodenameCrew/cne-openfl old
+          haxelib install lime 8.1.2 --always
 
-          echo "=== Custom Lime (Ajwyunsx fork) ==="
-          retry_git lime https://github.com/Ajwyunsx/lime
+          echo "=== Flixel stack (CNE old branch) ==="
+          retry_git flixel https://github.com/CodenameCrew/cne-flixel old
+          retry_git flixel-addons https://github.com/CodenameCrew/cne-flixel-addons old
+          retry_git flxanimate https://github.com/CodenameCrew/cne-flxanimate old
 
-          echo "=== CNE flixel stack ==="
-          retry_git flixel https://github.com/CodenameCrew/cne-flixel
-          retry_git flixel-addons https://github.com/CodenameCrew/cne-flixel-addons
-          retry_git flxanimate https://github.com/CodenameCrew/cne-flxanimate
-          retry_git hscript-improved https://github.com/CodenameCrew/hscript-improved custom-classes
+          echo "=== Other CNE libraries ==="
+          retry_git hscript-improved https://github.com/CodenameCrew/hscript-improved codename-dev
+          retry_git hxdiscord_rpc https://github.com/CodenameCrew/cne-hxdiscord_rpc old
+          retry_git away3d https://github.com/CodenameCrew/away3d
 
-          echo "=== Extra extensions ==="
-          haxelib install hxjava --always
+          echo "=== Standard haxelib libraries ==="
+          haxelib install funkin-modchart --always || true
           haxelib install hxvlc 1.9.3 --always --skip-deps || true
-          haxelib install hxdiscord_rpc --always || true
+          haxelib install hxWebSockets --always || true
+          haxelib install format --always
+          haxelib install markdown --always
+          haxelib install nape-haxe4 --always || true
+          haxelib install hxjava --always
+          haxelib install hxcpp-debug-server --always || true
 
           echo "=== Run project setup ==="
           haxe -cp commandline -D analyzer-optimize --run Main setup -s || echo "Setup finished."
@@ -95,8 +102,31 @@ jobs:
           find . -name "Interp.hx" -path "*/hscript*" -exec sed -i 's/return Config\.IMPORT_BLACKLIST;/return [];/g' {} \;
           find . -name "Interp.hx" -path "*/hscript*" -exec sed -i 's/return Config\.importBlacklist;/return [];/g' {} \;
 
-      - name: Add missing Android extern classes
+      - name: Add missing type definitions (lime + Android)
         run: |
+          # 补全 lime 缺失类型
+          mkdir -p source/lime/ui source/lime/media
+
+          cat > source/lime/ui/WindowVSyncMode.hx << 'EOF'
+          package lime.ui;
+
+          enum WindowVSyncMode {
+            DISABLED;
+            ENABLED;
+            ADAPTIVE;
+          }
+          EOF
+
+          cat > source/lime/media/AudioDecoder.hx << 'EOF'
+          package lime.media;
+
+          extern class AudioDecoder {
+            public function new();
+            public function decode(data:Dynamic):Dynamic;
+          }
+          EOF
+
+          # 补全 Android 系统类 extern
           mkdir -p source/android/os source/android/content
 
           cat > source/android/os/Build.hx << 'EOF'
