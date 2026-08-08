@@ -75,7 +75,7 @@ jobs:
 
           echo "=== Installing Android native extension ==="
           if ! haxelib list | grep -q "extension-androidtools"; then
-            haxelib git extension-androidtools https://github.com/MAJigsaw77/extension-androidtools.git || \
+            haxelib git extension-androidtools https://github.com/LimeExtensions/extension-androidtools.git || \
             retry_install extension-androidtools
           fi
 
@@ -107,6 +107,56 @@ jobs:
         run: |
           find . -name "Interp.hx" -path "*/hscript/*" -exec sed -i 's/return Config\.IMPORT_BLACKLIST;/return [];/g' {} \;
           find . -name "Interp.hx" -path "*/hscript/*" -exec sed -i 's/return Config\.importBlacklist;/return [];/g' {} \;
+
+      - name: Fix missing Android extern classes
+        run: |
+          # 补充缺失的安卓系统类extern定义，解决Type not found编译错误
+          mkdir -p source/android/os
+          mkdir -p source/android/content
+
+          cat > source/android/os/Build.hx << 'EOF'
+          package android.os;
+
+          extern class Build {
+              public static var MODEL:String;
+              public static var MANUFACTURER:String;
+              public static var PRODUCT:String;
+              public static var DEVICE:String;
+              public static var VERSION:Version;
+          }
+
+          extern class Version {
+              public static var SDK_INT:Int;
+              public static var RELEASE:String;
+              public static var CODENAME:String;
+          }
+          EOF
+
+          cat > source/android/content/Context.hx << 'EOF'
+          package android.content;
+
+          extern class Context {
+              public function getExternalFilesDir(type:String):String;
+              public function getFilesDir():String;
+              public function getPackageName():String;
+              public function getContentResolver():ContentResolver;
+          }
+
+          extern class ContentResolver {}
+          EOF
+
+          cat > source/android/Settings.hx << 'EOF'
+          package android;
+
+          extern class Settings {
+              public static var System:SystemSettings;
+          }
+
+          extern class SystemSettings {
+              public static var SCREEN_BRIGHTNESS:String;
+              public static var SCREEN_OFF_TIMEOUT:String;
+          }
+          EOF
 
       - name: Configure Android
         run: |
