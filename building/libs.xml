@@ -3,20 +3,20 @@
 	<if cond="update || all">
 		<print pretty="true">Preparing installation...</print>
 
-		<!-- OpenFL & Lime (Required for Flixel) -->
-		<git name="openfl" url="https://github.com/CodenameCrew/cne-openfl" />
-	    <git name="lime" url="https://github.com/azmlpoh/lime-8.2.2" />
+		<!-- OpenFL & Lime (使用 azmlpoh 的公开仓库) -->
+		<git name="openfl" url="https://github.com/azmlpoh/cne-openfl" ref="old" />
+		<git name="lime" url="https://github.com/azmlpoh/lime-8.2.2" />
 
-		<!-- Flixel -->
-		<git name="flixel" url="https://github.com/CodenameCrew/cne-flixel" />
-	    <git name="flixel-addons" url="https://github.com/CodenameCrew/cne-flixel-addons" />
+		<!-- Flixel (使用 CodenameCrew，指定 old 分支) -->
+		<git name="flixel" url="https://github.com/CodenameCrew/cne-flixel" ref="old" />
+		<git name="flixel-addons" url="https://github.com/CodenameCrew/cne-flixel-addons" ref="old" />
 
-		<!-- Other Libraries -->
-		<git name="hscript-improved" url="https://github.com/CodenameCrew/hscript-improved" ref="codename-dev" />
+		<!-- 其他库 -->
+		<git name="hscript-improved" url="https://github.com/azmlpoh/hscript-improved-codename" />
 		<git name="flxanimate" url="https://github.com/CodenameCrew/cne-flxanimate" />
 		<git name="hxdiscord_rpc" url="https://github.com/CodenameCrew/cne-hxdiscord_rpc" skipDeps="true" />
 		<lib name="funkin-modchart" version="1.2.4" skipDeps="true" />
-	    <lib name="hxvlc" version="1.9.3" skipDeps="true" />
+		<lib name="hxvlc" version="1.9.3" skipDeps="true" />
 
 		<!-- Documentation and other features -->
 		<git name="away3d" url="https://github.com/CodenameCrew/away3d" />
@@ -26,6 +26,7 @@
 		<lib name="format" />
 		<lib name="hxp" />
 
+		<!-- Hxcpp (使用 CodenameCrew 的 old 分支) -->
 		<git name="hxcpp" url="https://github.com/CodenameCrew/cne-hxcpp" ref="old" />
 	</if>
 </libraries>
